@@ -1,0 +1,97 @@
+#!/bin/sh
+
+### This Git script is used to provide Git support for "record only merges"
+### by way of automatically splitting a branch merge into sections based
+### on excluded commit hashes.
+###
+### Commit hashes that should be excluded from merges must manually be
+### appended to the `.gitrecordonly` file at the root of the repo.
+###
+### To install:
+### 1) Copy this file to your PATH: for example `cp git-smerge /usr/local/bin`
+### 2) Make the script executable: `chmod a+x /usr/local/bin/git-smerge`
+### 3) Invoke the new git plugin WITHOUT the dash from your git repo: `git smerge <branch>`
+###    where <branch> is the name of the branch to merge FROM
+###
+### Author: Krishna Bhamidipati
+### version: 0.1
+###
+### Special thanks to:
+### - https://stackoverflow.com/a/729723/1603489
+### - https://stackoverflow.com/a/49114922/1603489
+### - https://stackoverflow.com/a/2871034/1603489
+### - https://askubuntu.com/a/674347
+### - https://stackoverflow.com/a/16109755/1603489
+###
+
+GIT_FOLDER=$(git rev-parse --show-toplevel)
+EXCLUDE_FILE="${GIT_FOLDER}/.gitrecordonly"
+GIT_LOG_GREP_ARG="commit"
+RECORD_ONLY_COMMIT_COMMENT_PREFIX="Record only merge"
+
+# parse and validate arguments
+BRANCH_NAME="$1"
+MERGE_OPTS="--no-edit"
+test -z "$BRANCH_NAME" && echo "\033[31mPlease provide a branch/tag name to merge from. \033[0m" 1>&2 && exit 1
+
+# check if branch/tag exists
+git show-ref --verify --quiet refs/heads/"$BRANCH_NAME"
+if [ $? -ne 0 ]; then
+  echo "\033[31mNo branch/tag named ${BRANCH_NAME} exists. \033[0m"
+  exit 1
+fi
+
+# create ignore file if not exists
+touch "$EXCLUDE_FILE"
+
+# internal function
+iterative_merge() {
+
+  set -e
+  # Any subsequent(*) commands which fail will cause the shell script to exit immediately
+
+  commits=("$@")
+
+  last_i="${commits[*]: -1}"
+  previous_i=""
+  for commit_i in "${commits[@]}"
+
+  do
+
+    # favor grep instead of reading the exclude file into memory
+    if grep -Fxq "$commit_i" "$EXCLUDE_FILE"; then
+      # match found
+
+      if ! [ -z "$previous_i" ]; then
+        # merge everything before this commit
+        git merge "$MERGE_OPTS" "$previous_i"
+      fi
+
+      echo "\033[93mExcluding commit $commit_i \033[0m"
+      git merge -s ours "$commit_i" -m "${RECORD_ONLY_COMMIT_COMMENT_PREFIX} $commit_i"
+
+    else
+      # no match found
+      echo "\033[92m$commit_i is OK \033[0m"
+    fi
+
+    # flush if this is the last element
+    if [ "$commit_i" == "$last_i" ]; then
+      git merge "$MERGE_OPTS" "$commit_i"
+    fi
+
+    previous_i="$commit_i"
+
+  done
+
+}
+
+# save multiline output to array
+COMMITS_TO_MERGE=($(git log .."${BRANCH_NAME}" --reverse | grep "${GIT_LOG_GREP_ARG}" | cut -f2 -d " " ))
+NUM_COMMITS="${#COMMITS_TO_MERGE[@]}"
+echo "${NUM_COMMITS} commits found"
+
+if [ "$NUM_COMMITS" -ne 0 ]; then
+  # mixing array and non-array args in bash is messy, so don't
+  iterative_merge ${COMMITS_TO_MERGE[@]}
+fi
