@@ -14,7 +14,7 @@
 ###    where <branch> is the name of the branch to merge FROM
 ###
 ### Author: Krishna Bhamidipati
-### version: 0.1
+### version: 0.1.1
 ###
 ### Special thanks to:
 ### - https://stackoverflow.com/a/729723/1603489
@@ -59,7 +59,7 @@ iterative_merge() {
   do
 
     # favor grep instead of reading the exclude file into memory
-    if grep -Fxq "$commit_i" "$EXCLUDE_FILE"; then
+    if grep -Fq "${commit_i}" "$EXCLUDE_FILE"; then
       # match found
 
       if ! [ -z "$previous_i" ]; then
