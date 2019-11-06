@@ -32,12 +32,12 @@ RECORD_ONLY_COMMIT_COMMENT_PREFIX="Record only merge"
 # parse and validate arguments
 BRANCH_NAME="$1"
 MERGE_OPTS="--no-edit"
-test -z "$BRANCH_NAME" && echo "\033[31mPlease provide a branch/tag name to merge from. \033[0m" 1>&2 && exit 1
+test -z "$BRANCH_NAME" && echo -e "\033[31mPlease provide a branch/tag name to merge from. \033[0m" 1>&2 && exit 1
 
 # check if branch/tag exists
 git show-ref --verify --quiet refs/heads/"$BRANCH_NAME"
 if [ $? -ne 0 ]; then
-  echo "\033[31mNo branch/tag named ${BRANCH_NAME} exists. \033[0m"
+  echo -e "\033[31mNo branch/tag named ${BRANCH_NAME} exists. \033[0m"
   exit 1
 fi
 
@@ -67,12 +67,12 @@ iterative_merge() {
         git merge "$MERGE_OPTS" "$previous_i"
       fi
 
-      echo "\033[93mExcluding commit $commit_i \033[0m"
+      echo -e "\033[93mExcluding commit $commit_i \033[0m"
       git merge -s ours "$commit_i" -m "${RECORD_ONLY_COMMIT_COMMENT_PREFIX} $commit_i"
 
     else
       # no match found
-      echo "\033[92m$commit_i is OK \033[0m"
+      echo -e "\033[92m$commit_i is OK \033[0m"
     fi
 
     # flush if this is the last element
