@@ -1,0 +1,11 @@
+title git smerge CI Test
+
+master->master:Write "hello" to new \nfiles a.txt and b.txt
+master-->feature:Create and switch to \nnew branch "feature"
+feature->feature:Append "feature" \nto new file c.txt
+feature->feature:Append "feature" \nto file a.txt
+feature-->user:Mark previous commit \nhash to be excluded
+user->master:Append hash to .gitrecordonly \nin the branch to be merged INTO
+master->master:Append "goodbye" \nto file a.txt
+feature->feature:Append "feature" \nto file b.txt
+feature-->master:Merge feature into \nmaster using `git smerge`

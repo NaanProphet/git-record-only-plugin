@@ -1,5 +1,8 @@
 #!/bin/sh
 
+SMERGE_COMMENT_PREFIX="[SMERGE]"
+RECORD_ONLY_COMMIT_COMMENT_PREFIX="Record only merge"
+
 ### This Git script is used to provide Git support for "record only merges"
 ### by way of automatically splitting a branch merge into sections based
 ### on excluded commit hashes.
@@ -14,7 +17,7 @@
 ###    where <branch> is the name of the branch to merge FROM
 ###
 ### Author: Krishna Bhamidipati
-### version: 0.1.1
+### version: 0.1.2
 ###
 ### Special thanks to:
 ### - https://stackoverflow.com/a/729723/1603489
@@ -27,7 +30,6 @@
 GIT_FOLDER=$(git rev-parse --show-toplevel)
 EXCLUDE_FILE="${GIT_FOLDER}/.gitrecordonly"
 GIT_LOG_GREP_ARG="commit"
-RECORD_ONLY_COMMIT_COMMENT_PREFIX="Record only merge"
 
 # parse and validate arguments
 BRANCH_NAME="$1"
@@ -43,6 +45,12 @@ fi
 
 # create ignore file if not exists
 touch "$EXCLUDE_FILE"
+
+prefix_last_commit() {
+	prev_commit_msg=`git log -1 --pretty=%B`
+	git commit --amend -m "${SMERGE_COMMENT_PREFIX} ${prev_commit_msg}"
+	prev_commit_msg=
+}
 
 # internal function
 iterative_merge() {
@@ -65,10 +73,11 @@ iterative_merge() {
       if ! [ -z "$previous_i" ]; then
         # merge everything before this commit
         git merge "$MERGE_OPTS" "$previous_i"
+		prefix_last_commit
       fi
 
       echo -e "\033[93mExcluding commit $commit_i \033[0m"
-      git merge -s ours "$commit_i" -m "${RECORD_ONLY_COMMIT_COMMENT_PREFIX} $commit_i"
+      git merge -s ours "$commit_i" -m "${SMERGE_COMMENT_PREFIX} ${RECORD_ONLY_COMMIT_COMMENT_PREFIX} $commit_i"
 
     else
       # no match found
@@ -78,6 +87,7 @@ iterative_merge() {
     # flush if this is the last element
     if [ "$commit_i" == "$last_i" ]; then
       git merge "$MERGE_OPTS" "$commit_i"
+	  prefix_last_commit
     fi
 
     previous_i="$commit_i"

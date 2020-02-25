@@ -5,8 +5,6 @@ git:
   depth: false
 
 install:
-  - git checkout --track origin/feature
-  - git checkout --track origin/feature2
   - git checkout master
 
 before_script:
@@ -14,4 +12,4 @@ before_script:
     - ln -s shunit2-2.1.7 shunit2-src
 
 script:
-    - bash equality_test.sh
+    - bash test_runner.sh
