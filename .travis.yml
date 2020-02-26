@@ -1,0 +1,17 @@
+language: bash
+
+git:
+  # clone all branches
+  depth: false
+
+install:
+  - git checkout --track origin/feature
+  - git checkout --track origin/feature2
+  - git checkout master
+
+before_script:
+    - curl -L "https://github.com/kward/shunit2/archive/v2.1.7.tar.gz" | tar zx
+    - ln -s shunit2-2.1.7 shunit2-src
+
+script:
+    - bash equality_test.sh

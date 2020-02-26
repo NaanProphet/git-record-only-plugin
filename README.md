@@ -1,4 +1,5 @@
 # git-record-only-plugin
+[![Build Status](https://travis-ci.org/NaanProphet/git-record-only-plugin.svg?branch=master)](https://travis-ci.org/NaanProphet/git-record-only-plugin)
 
 ## Overview
 
